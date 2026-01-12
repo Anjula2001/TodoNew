@@ -36,9 +36,17 @@ const AddTask = () => {
     }
 
     // Data to be sent to the backend
+    // Format date properly to avoid timezone issues
+    // Normalize to midnight local time to avoid any time component issues
+    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const year = localDate.getFullYear();
+    const month = String(localDate.getMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+    
     const taskData = {
-      date: date.toISOString().split('T')[0],
-      context: taskText, // Gets YYYY-MM-DD
+      date: formattedDate, // Gets YYYY-MM-DD in local timezone
+      context: taskText,
       completed: false
     };
 
@@ -65,7 +73,8 @@ const AddTask = () => {
 
       // Redirect to today page after successful submission
       alert('Task added successfully!');
-      router.push('/today');
+      // Use window.location for a full page refresh to ensure data is fetched
+      window.location.href = '/today';
       
     } catch (error) {
       console.error('Failed to add task:', error);
@@ -75,26 +84,28 @@ const AddTask = () => {
   };
 
   return (
-    <div className="bg-[#D9D9D9] flex flex-col gap-2 p-6 m-10 rounded-[50px] w-250 mx-auto">
-      {/* 2. Add onChange handler and connect textarea value to state */}
-      <textarea 
-        name="task" 
-        id="task" 
-        className="w-full p-2 size-auto placeholder-gray-500 focus:outline-none text-black text-[32px]" 
-        placeholder="Write Your Task Here..."
-        value={taskText} // Connect value to state
-        onChange={(e) => setTaskText(e.target.value)} // Update state on change
-      ></textarea>
-      
-      <div className="">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-[#D9D9D9] flex flex-col gap-6 p-8 rounded-3xl shadow-md">
+          {/* 2. Add onChange handler and connect textarea value to state */}
+          <textarea 
+            name="task" 
+            id="task" 
+            className="w-full p-4 min-h-[120px] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black text-2xl rounded-lg bg-white" 
+            placeholder="Write Your Task Here..."
+            value={taskText} // Connect value to state
+            onChange={(e) => setTaskText(e.target.value)} // Update state on change
+          ></textarea>
+          
+          <div className="flex flex-col gap-4">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto text-base py-6">
                 {/* Display the selected date */}
-                {date ? new Intl.DateTimeFormat('en-US').format(date) : "Pick a Date"}
+                {date ? new Intl.DateTimeFormat('en-US', { dateStyle: 'long' }).format(date) : "Pick a Date"}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80">
+          <PopoverContent className="w-auto p-0">
             <Calendar
               mode="single"
               selected={date}
@@ -106,19 +117,21 @@ const AddTask = () => {
         </Popover>
       </div>
       
-      <div className=" border-b border-black m-2"></div>
+      <div className="border-b-2 border-black"></div>
       
-      <div className="flex flex-column gap-4 sm:flex-row sm:justify-end">
+      <div className="flex flex-col sm:flex-row gap-4 justify-end">
         
         <Link href="/today" passHref>
-          <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition duration-150">Cancel</button>
+          <button className="px-6 py-3 text-base font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-150">Cancel</button>
         </Link>
         <button 
           onClick={handleSubmit}
-          className="pd-2 px-4 py-2 text-sm font-medium text-white bg-[#34A353] rounded-md hover:bg-blue-700 transition duration-150"
+          className="px-6 py-3 text-base font-medium text-white bg-[#34A353] rounded-lg hover:bg-green-700 transition duration-150"
         >
           Add Task
         </button>
+      </div>
+    </div>
       </div>
     </div>
   )

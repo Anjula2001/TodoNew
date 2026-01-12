@@ -1,22 +1,21 @@
 package com.todoapp.todoapp.dto;
 
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@AllArgsConstructor
-@NoArgsConstructor
-@Data
-
-
 public class ActivityDTO {
     private Integer id;
     private String date;
     private String context;
     private Boolean completed;
 
-    // Manual getters and setters to fix compilation issue
+    public ActivityDTO() {
+    }
+
+    public ActivityDTO(Integer id, String date, String context, Boolean completed) {
+        this.id = id;
+        this.date = date;
+        this.context = context;
+        this.completed = completed;
+    }
+
     public Integer getId() {
         return id;
     }

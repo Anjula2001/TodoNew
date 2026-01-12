@@ -43,5 +43,8 @@ public class ActivityController {
         return activityServices.toggleCompleted(id);
     }
 
-
+    @DeleteMapping("/deleteactivity/{id}")
+    public void deleteActivity(@PathVariable Integer id) {
+        activityServices.deleteActivity(id);
+    }
 }

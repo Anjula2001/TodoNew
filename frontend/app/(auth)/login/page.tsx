@@ -21,7 +21,7 @@ export default function LoginForm() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
+      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -29,9 +29,8 @@ export default function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
+        const data = await response.json();
         // Save token and user data
         setAuthToken(data.token);
         setUserData(data.name, data.email);
@@ -39,11 +38,13 @@ export default function LoginForm() {
         // Redirect to today's todos
         router.push("/today");
       } else {
-        setError(typeof data === 'string' ? data : "Invalid email or password");
+        // Handle error response - backend returns plain text
+        const errorText = await response.text();
+        setError(errorText || "Invalid email or password");
       }
     } catch (err) {
       console.error(err);
-      setError("Error connecting to server");
+      setError("Unable to connect to server. Please try again.");
     } finally {
       setLoading(false);
     }

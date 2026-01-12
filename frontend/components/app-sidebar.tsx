@@ -1,8 +1,13 @@
-import { Calendar, CalendarClock, CheckCircle, CalendarCheck, Plus, Settings } from "lucide-react"
+"use client"
+
+import { Calendar, CalendarClock, CheckCircle, CalendarCheck, Plus, Settings, LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { removeAuthToken } from "@/lib/auth"
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -44,6 +49,13 @@ const items = [
 ]
 
 export function AppSidebar() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    removeAuthToken();
+    router.push("/login");
+  };
+
   return (
     <Sidebar className="border-[#ffffff] rounded-r-1xl" style={{ backgroundColor: '#14B8A6' }}>
       <SidebarContent style={{ backgroundColor: '#14B8A6' }} className="rounded-r-3xl border-0">
@@ -70,6 +82,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter style={{ backgroundColor: '#14B8A6' }} className="border-0">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              onClick={handleLogout}
+              className="text-black hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="font-medium">Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   )
 }
