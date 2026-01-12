@@ -1,0 +1,29 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.todoapp:todoapp >-------------------------
+[INFO] Building todoapp 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.0.0:run (default-cli) > test-compile @ todoapp >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ todoapp ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ todoapp ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 15 source files with javac [debug parameters release 21] to target/classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.557 s
+[INFO] Finished at: 2026-01-12T04:27:47+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile (default-compile) on project todoapp: Fatal error compiling: error: release version 21 not supported -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
