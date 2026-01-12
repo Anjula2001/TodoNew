@@ -1,50 +1,144 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { 
-  User,
-  Camera,
-  Upload
-} from "lucide-react"
+import { getAuthToken, setAuthToken, getUserData } from "@/lib/auth"
 
 export default function ProfilePage() {
-  const [profileImage, setProfileImage] = useState<string>("/placeholder-user.jpg")
+  const router = useRouter();
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [loading, setLoading] = useState(true)
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File size should be less than 5MB")
-        return
-      }
+  useEffect(() => {
+    // Check if user is authenticated
+    const token = getAuthToken();
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    
+    // Load current user data
+    fetchUserProfile();
+  }, [router]);
 
-      // Check file type
-      if (!file.type.startsWith("image/")) {
-        alert("Please upload an image file")
-        return
-      }
+  const fetchUserProfile = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch("http://localhost:8080/api/v1/auth/profile", {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setProfileImage(reader.result as string)
+      if (response.ok) {
+        const data = await response.json();
+        setName(data.name);
+        setEmail(data.email);
+      } else if (response.status === 401) {
+        router.push("/login");
       }
-      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccountUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const token = getAuthToken();
+      const response = await fetch("http://localhost:8080/api/v1/auth/profile", {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update token and user data in localStorage
+        setAuthToken(data.token);
+        localStorage.setItem('user', JSON.stringify({ 
+          name: data.name, 
+          email: data.email 
+        }));
+        alert("Profile updated successfully!");
+        // Refresh the page to show updated data everywhere
+        window.location.reload();
+      } else {
+        const error = await response.text();
+        alert(`Failed to update profile: ${error}`);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("Failed to update profile. Please try again.");
     }
   }
-  const handleAccountUpdate = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Add your API call here
-    console.log("Updating account:", { name, email, profileImage })
-    alert("Account updated successfully!")
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      alert("New passwords do not match!");
+      return;
+    }
+    
+    // Validate password length
+    if (newPassword.length < 6) {
+      alert("New password must be at least 6 characters");
+      return;
+    }
+    
+    try {
+      const token = getAuthToken();
+      const response = await fetch("http://localhost:8080/api/v1/auth/change-password", {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          currentPassword, 
+          newPassword 
+        }),
+      });
+
+      if (response.ok) {
+        alert("Password changed successfully!");
+        // Clear password fields
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        const error = await response.text();
+        alert(`Failed to change password: ${error}`);
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      alert("Failed to change password. Please try again.");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl text-gray-600">Loading profile...</div>
+      </div>
+    );
   }
 
   return (
@@ -76,52 +170,6 @@ export default function ProfilePage() {
               </TabsTrigger>
             </TabsList>            <TabsContent value="account" className="space-y-8 mt-0">
               <form onSubmit={handleAccountUpdate} className="space-y-8">
-                {/* Profile Photo Section */}
-                <div className="flex flex-col items-center gap-4 pb-6 border-b border-slate-200">
-                  <div className="relative group">
-                    <Avatar className="h-32 w-32 border-4 border-[#1ABC9C]">
-                      <AvatarImage src={profileImage} alt="Profile" />
-                      <AvatarFallback className="bg-[#C1E8D5] text-[#1ABC9C] text-4xl">
-                        <User size={48} />
-                      </AvatarFallback>
-                    </Avatar>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute bottom-0 right-0 bg-[#1ABC9C] hover:bg-[#16a085] text-white p-2.5 rounded-full shadow-lg transition-all group-hover:scale-110"
-                    >
-                      <Camera size={20} />
-                    </button>
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      variant="outline"
-                      className="gap-2 border-[#1ABC9C] text-[#1ABC9C] hover:bg-[#1ABC9C]/10"
-                    >
-                      <Upload size={16} />
-                      Upload Photo
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setProfileImage("/placeholder-user.jpg")}
-                      variant="outline"
-                      className="text-slate-600 hover:bg-slate-100"
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                  
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-slate-600 font-medium">Name</Label>
                   <Input 
@@ -154,40 +202,47 @@ export default function ProfilePage() {
                 </div>
               </form>
             </TabsContent>            <TabsContent value="security" className="space-y-8 mt-0">
-              <form onSubmit={(e) => {
-                e.preventDefault()
-                // Add password change logic here
-                alert("Password changed successfully!")
-              }} className="space-y-8">
+              <form onSubmit={handlePasswordChange} className="space-y-8">
                 <div className="space-y-2">
                   <Label htmlFor="current-password" className="text-slate-600 font-medium">Current Password</Label>
                   <Input 
                     id="current-password" 
                     type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Enter current password" 
                     className="bg-[#C1E8D5] border-none h-12 text-slate-700 placeholder:text-slate-500 rounded-xl focus-visible:ring-[#1ABC9C]"
+                    required
                   />
                 </div>              <div className="space-y-2">
                   <Label htmlFor="new-password" className="text-slate-600 font-medium">New Password</Label>
                   <Input 
                     id="new-password" 
                     type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter new password" 
                     className="bg-[#C1E8D5] border-none h-12 text-slate-700 placeholder:text-slate-500 rounded-xl focus-visible:ring-[#1ABC9C]"
+                    required
+                    minLength={6}
                   />
                 </div>              <div className="space-y-2">
                   <Label htmlFor="confirm-password" className="text-slate-600 font-medium">Confirm New Password</Label>
                   <Input 
                     id="confirm-password" 
                     type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password" 
                     className="bg-[#C1E8D5] border-none h-12 text-slate-700 placeholder:text-slate-500 rounded-xl focus-visible:ring-[#1ABC9C]"
+                    required
+                    minLength={6}
                   />
                 </div>
 
                 <div className="pt-4">
                   <Button type="submit" className="bg-[#10b981] hover:bg-[#059669] text-white w-40 h-11 rounded-xl text-md shadow-lg shadow-emerald-100">
-                    Save
+                    Change Password
                   </Button>
                 </div>
               </form>

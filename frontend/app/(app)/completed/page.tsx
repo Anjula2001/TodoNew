@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Task from "../task/page";
+import Day from "../day/page";
 import { getAuthToken } from "@/lib/auth";
 
 type ActivityDTO = {
@@ -15,7 +15,6 @@ export default function CompletedPage() {
   const [activities, setActivities] = useState<ActivityDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchActivities();
@@ -50,72 +49,47 @@ export default function CompletedPage() {
       .finally(() => setLoading(false));
   };
 
-  const handleTaskSelect = (taskId: number) => {
-    setSelectedTaskId((currentId) => (currentId === taskId ? null : taskId));
-  };
-
-  const handleTaskUncomplete = async (taskId: number) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        console.error("Not authenticated");
-        return;
-      }
-
-      const response = await fetch(`http://localhost:8080/api/v1/togglecompleted/${taskId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) throw new Error("Failed to update activity");
-      
-      // Refresh the activities list
-      fetchActivities();
-      setSelectedTaskId(null);
-    } catch (err) {
-      console.error("Error uncompleting task:", err);
+  // Group activities by date
+  const groupedActivities = activities.reduce((acc, activity) => {
+    const date = activity.date;
+    if (!acc[date]) {
+      acc[date] = [];
     }
-  };
+    acc[date].push(activity);
+    return acc;
+  }, {} as Record<string, ActivityDTO[]>);
+
+  // Sort dates in descending order (most recent first)
+  const sortedDates = Object.keys(groupedActivities).sort((a, b) => b.localeCompare(a));
 
   if (loading) return <p className="p-6">Loading...</p>;
   if (error) return <p className="p-6 text-red-600">{error}</p>;
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold text-gray-800">Completed Tasks</h1>
-        <p className="text-gray-600 mt-2">All your accomplished tasks</p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mb-6">
+          <h1 className="text-4xl font-bold text-gray-800">Completed Tasks</h1>
+          <p className="text-gray-600 mt-2">All your accomplished tasks</p>
+        </div>
 
-      <div className="space-y-4">
         {activities.length === 0 ? (
-          <div className="bg-[#D9D9D9] p-8 rounded-[20px] text-center">
+          <div className="bg-[#D9D9D9] p-12 rounded-3xl text-center">
             <p className="text-gray-600 text-lg">No completed tasks yet</p>
           </div>
         ) : (
-          activities.map((activity) => (
-            <div key={activity.id} className="bg-[#D9D9D9] p-4 rounded-[20px]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
-                  <input 
-                    className="cursor-pointer size-[20px]" 
-                    type="checkbox"
-                    checked={true}
-                    onChange={() => handleTaskUncomplete(activity.id)}
-                  />
-                  <span className="text-gray-500 line-through text-lg">
-                    {activity.context}
-                  </span>
-                </div>
-                <div className="text-sm text-gray-600">
-                  {activity.date}
-                </div>
-              </div>
-            </div>
-          ))
+          sortedDates.map((dateStr) => {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            return (
+              <Day
+                key={dateStr}
+                date={date}
+                activities={groupedActivities[dateStr]}
+                onUpdate={fetchActivities}
+              />
+            );
+          })
         )}
       </div>
     </div>

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -50,7 +51,11 @@ public class ActivityServices {
         return modelMapper.map(saved, ActivityDTO.class);
     }
 
+    @SuppressWarnings("null")
     public ActivityDTO updateActivity(Integer id, ActivityDTO activityDTO) {
+        if (id == null) {
+            throw new IllegalArgumentException("Activity id cannot be null");
+        }
         ActivityModel existingActivity = activityrepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Activity not found with id: " + id));
         
@@ -65,15 +70,30 @@ public class ActivityServices {
         }
         
         ActivityModel updatedActivity = activityrepo.save(existingActivity);
+        Objects.requireNonNull(updatedActivity, "Saved activity cannot be null");
         return modelMapper.map(updatedActivity, ActivityDTO.class);
     }
 
     public ActivityDTO toggleCompleted(Integer id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Activity id cannot be null");
+        }
         ActivityModel activity = activityrepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Activity not found with id: " + id));
         
         activity.setCompleted(!activity.getCompleted());
         ActivityModel updatedActivity = activityrepo.save(activity);
         return modelMapper.map(updatedActivity, ActivityDTO.class);
+    }
+
+    public void deleteActivity(Integer id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Activity id cannot be null");
+        }
+        // Verify the activity exists before deleting
+        if (!activityrepo.existsById(id)) {
+            throw new RuntimeException("Activity not found with id: " + id);
+        }
+        activityrepo.deleteById(id);
     }
 }
